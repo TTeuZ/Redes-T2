@@ -1,11 +1,26 @@
-import argparse
 from src.Node import Node
+from src.Game import Game
+import argparse
+
 
 def main(args):
     node = Node(args.port, args.neighbor, args.neighbor_port, args.token)
     node.establish_connection()
 
-    print(node.machines)
+    game = Game(node.machines)
+
+    while not game.ended:
+        print(f"Iniciando round: {game.rounds}\n")
+
+        if game.lifes >= 0:
+            if node.token:
+                game.shuffle_and_distribute(node)
+            else:
+                game.receive_cards(node)
+
+            print(game.my_cards)
+            
+            game.ended = True
 
 
 if __name__ == "__main__":

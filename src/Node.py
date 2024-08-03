@@ -44,7 +44,7 @@ class Node:
         print("Estabelencendo conexao...")
 
         if self.token:
-            connection_package = Package(src=self.ip, dst=None, token=False, type=CONNECTION, data="-1")
+            connection_package = Package(src=self.ip, token=False, type=CONNECTION, data="-1")
             self.send_package(connection_package)
             
             package = self.recv_package()
@@ -71,7 +71,7 @@ class Node:
                 count = int(splited_data[-1]) + 1
                 data = splited_data[0] + f"/({self.hostname}, {self.ip}, {self.port})-" + f"{count}"
 
-                connection_package = Package(src=self.ip, dst=None, token=False, type=CONNECTION, data=data)
+                connection_package = Package(src=self.ip, token=False, type=CONNECTION, data=data)
                 self.send_package(connection_package)
 
             package = self.recv_package()
@@ -94,5 +94,5 @@ class Node:
                             if self.machines[index]["port"] != self.neighbor_port 
                             and self.machines[index]["name"] != self.neighbor])
         data += f"/({self.hostname}, {self.ip}, {self.port})"
-        list_package = Package(src=self.ip, dst=None, token=False, type=LIST, data=data)
+        list_package = Package(src=self.ip, token=False, type=LIST, data=data)
         self.send_package(list_package)
