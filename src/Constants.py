@@ -1,7 +1,9 @@
 # Constants
 DELIMITER = "~"
 BUFFER_SIZE = 1024
-TIMEOUT = 10
+TIMEOUT = 60
+NUM_PLAYERS = 4
 
 # Enums - Types
 CONNECTION = -1
+LIST = -2

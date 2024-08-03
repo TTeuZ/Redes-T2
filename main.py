@@ -5,6 +5,8 @@ def main(args):
     node = Node(args.port, args.neighbor, args.neighbor_port, args.token)
     node.establish_connection()
 
+    print(node.machines)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Token Ring Network", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
