@@ -38,7 +38,7 @@ class Node:
             if ready:
                 data, _ = self.socket.recvfrom(BUFFER_SIZE)
                 return Package(data.decode())
-    
+
 
     def establish_connection(self):
         print("Estabelencendo conexao...")
