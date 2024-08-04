@@ -8,8 +8,7 @@ import copy
 
 class Game:
     def __init__(self, machines, node):
-        self.lifes, self.dead = 12, False
-        self.phase, self.rounds = Constants.PREPARE, 1
+        self.lifes, self.rounds, self.dead = 12, 1, False
         self.ended = False
         self.node = node
         
@@ -57,13 +56,13 @@ class Game:
         card_package = self.node.recv_package()
 
         if card_package.type == Constants.CARDS:
-            splited_data = card_package.data.split("/")
-            self.my_cards = splited_data[0].split("-")
-            self.turn = splited_data[-1]
+            split_data = card_package.data.split("/")
+            self.my_cards = split_data[0].split("-")
+            self.turn = split_data[-1]
 
             data = ""
-            for index in range(1, (len(splited_data) - 1)):
-                data += f"{splited_data[index]}/"
+            for index in range(1, (len(split_data) - 1)):
+                data += f"{split_data[index]}/"
             data += f"{self.turn}"
 
             card_package = Package(src=self.node.ip, dst=None, token=False, type=Constants.CARDS, data=data)
@@ -91,8 +90,8 @@ class Game:
             if response.type == Constants.BET:
                 self.players_alive[self.node.hostname]["bet"] = self._make_bet()
                 
-                splited_data = response.data.split("-")[:-1]
-                bets = [(item.split(',')[0].strip("() "), int(item.split(',')[1].strip(") "))) for item in splited_data]
+                split_data = response.data.split("-")[:-1]
+                bets = [(item.split(',')[0].strip("() "), int(item.split(',')[1].strip(") "))) for item in split_data]
                 for bet in bets:
                     self.players_alive[bet[0]]["bet"] = bet[1]
             
@@ -130,8 +129,8 @@ class Game:
             print("\nAs apostas feitas foram: ")
 
             if show_package.type == Constants.SHOW:
-                splited_data = show_package.data.split("-")[:-1]
-                bets = [(item.split(',')[0].strip("() "), int(item.split(',')[1].strip(") "))) for item in splited_data]
+                split_data = show_package.data.split("-")[:-1]
+                bets = [(item.split(',')[0].strip("() "), int(item.split(',')[1].strip(") "))) for item in split_data]
                 for bet in bets:
                     print(f"{bet[0]}: {bet[1]} ", end=" ")
                 print("", end="\n")
@@ -149,8 +148,8 @@ class Game:
 
             response = self.node.recv_package()
             if response.type == Constants.MOVE:
-                splited_data = response.data.split("-")[:-1]
-                moves = [(item.split(',')[0].strip("() "), item.split(',')[1].strip(") ")) for item in splited_data]
+                split_data = response.data.split("-")[:-1]
+                moves = [(item.split(',')[0].strip("() "), item.split(',')[1].strip(") ")) for item in split_data]
                 selected_card = self._select_card(moves)
 
                 moves.append((self.node.hostname, selected_card))
@@ -160,8 +159,8 @@ class Game:
             move_package = self.node.recv_package()
 
             if move_package.type == Constants.MOVE:
-                splited_data = move_package.data.split("-")[:-1]
-                moves = [(item.split(',')[0].strip("() "), item.split(',')[1].strip(") ")) for item in splited_data]
+                split_data = move_package.data.split("-")[:-1]
+                moves = [(item.split(',')[0].strip("() "), item.split(',')[1].strip(") ")) for item in split_data]
                 selected_card = self._select_card(moves)
 
                 data = move_package.data + f"({self.node.hostname}, {selected_card})-"
@@ -189,14 +188,49 @@ class Game:
 
         else:
             result_package = self.node.recv_package()
-            moves, winner = result_package.data.split("#")
 
-            moves = [(item.split(',')[0].strip("() "), item.split(',')[1].strip(") ")) for item in moves.split("-")]
-            winner =(winner.split(',')[0].strip("() "), winner.split(',')[1].strip(") "))
-            self._print_results(moves, winner)
+            if result_package.type == Constants.RESULTS:
+                moves, winner = result_package.data.split("#")
 
-            result_package = Package(src=self.node.ip, dst=None, token=False, type=Constants.RESULTS, data=result_package.data)
-            self.node.send_package(result_package)
+                moves = [(item.split(',')[0].strip("() "), item.split(',')[1].strip(") ")) for item in moves.split("-")]
+                winner =(winner.split(',')[0].strip("() "), winner.split(',')[1].strip(") "))
+                self._print_results(moves, winner)
+
+                result_package = Package(src=self.node.ip, dst=None, token=False, type=Constants.RESULTS, data=result_package.data)
+                self.node.send_package(result_package)
+
+
+    def check_round_result(self):
+        print("Avaliando resultado da rodada...")
+
+        if self.node.token:
+            players_results = {}
+            for player, values in self.players_alive.items():
+                players_results[player] = abs(values["bet"] - values["points"])
+            
+            self.lifes -= players_results[self.node.hostname]
+
+            data = "-".join([f"({player}, {value})" for player, value in players_results.items()])
+            round_package = Package(src=self.node.ip, dst=None, token=False, type=Constants.ROUND, data=data)
+            self.node.send_package(round_package)
+            
+            response = self.node.recv_package()
+            if response.type == Constants.ROUND:
+                print("Resultados transmitidos!\n")
+
+        else:
+            round_package = self.node.recv_package()
+
+            if round_package.type == Constants.ROUND:
+                split_data = round_package.data.split("-")
+                round_results = [(item.split(',')[0].strip("() "), int(item.split(',')[1].strip(") "))) for item in split_data]
+
+                result = next((item for item in round_results if item[0] == self.node.hostname), None)
+                self.lifes -= result[1]
+
+                print("Resultados recebido!\n")
+                round_package = Package(src=self.node.ip, dst=None, token=False, type=Constants.ROUND, data=round_package.data)
+                self.node.send_package(round_package)
 
 
     # ------------------------------------------------------ Internal --------------------------------------------------------------------
@@ -246,7 +280,7 @@ class Game:
         moves_values = [int(value == max(moves_values)) for value in moves_values]
 
         return moves_values.index(1)
-    
+
 
     def _print_results(self, moves, winner):
         print("\nJogadas da rodada: ")

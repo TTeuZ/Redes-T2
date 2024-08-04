@@ -20,6 +20,7 @@ BET = -4
 SHOW = -5
 MOVE = -6
 RESULTS = -7
+ROUND = -8
 
 # Deck
 CARDS_BY_HAND = 3

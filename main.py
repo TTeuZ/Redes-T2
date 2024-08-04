@@ -13,7 +13,7 @@ def main(args):
         print("\n--------------------------------------------------------------------------")
         if not game.dead:
             game.clear_state()
-            print(f"Iniciando round: {game.rounds}")
+            print(f"Iniciando round: {game.rounds} - Minhas vidas: {game.lifes}")
 
             if node.token: 
                 game.shuffle_and_distribute()
@@ -25,22 +25,21 @@ def main(args):
             print(f"Vira da rodade eh: {game.turn}\n")
             time.sleep(1)
             
-            while game.phase == Constants.GAME:
-                game.bet_wins()
-                game.show_bets()
+            game.bet_wins()
+            game.show_bets()
 
-                for r_index in range(Constants.ROUNDS):
-                    print(f"Rodada {r_index + 1}")
+            for r_index in range(Constants.ROUNDS):
+                print(f"Rodada {r_index + 1}")
 
-                    moves = game.make_move()
-                    game.compute_results(moves)
+                moves = game.make_move()
+                game.compute_results(moves)
 
-                print("calcular as percas de vida")
-                print("mandar as percas na rede")
-                print("quando receber a perca, decrementar a sua vida")
-                game.phase = Constants.PREPARE
+            game.check_round_result()
+            game.rounds += 1
+            # print("calcular as percas de vida")
+            # print("mandar as percas na rede")
+            # print("quando receber a perca, decrementar a sua vida")
 
-            game.ended = True # Temporary
         print("--------------------------------------------------------------------------\n")
 
 

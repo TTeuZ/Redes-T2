@@ -45,10 +45,10 @@ class Node:
             self.send_package(connection_package)
             
             response = self.recv_package()
-            splited_data = response.data.split("-")
+            split_data = response.data.split("-")
 
-            if response.type == Constants.CONNECTION and int(splited_data[-1]) == Constants.NUM_PLAYERS:
-                self.machines = splited_data[0].split("/")[1:]
+            if response.type == Constants.CONNECTION and int(split_data[-1]) == Constants.NUM_PLAYERS:
+                self.machines = split_data[0].split("/")[1:]
 
                 self._send_full_connection_list(self.machines)
                 response = self.recv_package()
@@ -58,13 +58,13 @@ class Node:
                 else:
                     print(f"Falha na conexao. Atualizacao da lista de jogadores mal sucedida.")
             else:
-                print(f"Falha na conexao. Apenas {int(splited_data[-1])} conectadas")
+                print(f"Falha na conexao. Apenas {int(split_data[-1])} conectadas")
                 
         else:
             connection_package = self.recv_package()
             if connection_package.type == Constants.CONNECTION:
-                splited_data = connection_package.data.split("-")
-                data = splited_data[0] + f"/{self.hostname}-" + f"{int(splited_data[-1]) + 1}"
+                split_data = connection_package.data.split("-")
+                data = split_data[0] + f"/{self.hostname}-" + f"{int(split_data[-1]) + 1}"
 
                 connection_package = Package(src=self.ip, dst=None, token=False, type=Constants.CONNECTION, data=data)
                 self.send_package(connection_package)
