@@ -5,19 +5,26 @@ from Package import Package
 import random
 
 class Game:
-    def __init__(self, machines):
+    def __init__(self, machines, node):
         self.lifes, self.point = 12, 0
-
-        self.phase = PREPARE
+        self.phase, self.rounds = PREPARE, 1
         self.ended = False
-        self.rounds = 1
+        self.node = node
+        
+        self.players_alive = {}
+        for machine in machines:
+            self.players_alive[machine] = {"bet": 0, "points": 0}
 
-        self.players_alive = machines
         self.my_cards = []
         self.turn = ""
 
     
-    def shuffle_and_distribute(self, node):
+    def clear_state(self):
+        for player in self.players_alive:
+            self.players_alive[player] = {"bet": 0, "points": 0}
+
+
+    def shuffle_and_distribute(self):
         print("Distribuindo as cartas...\n")
         shuffled_deck = random.sample(DECK, len(DECK))
 
@@ -27,7 +34,6 @@ class Game:
             end_index = start_index + CARDS_BY_HAND
             hands.append(shuffled_deck[start_index:end_index])
         self.turn = shuffled_deck[end_index + 1]
-
         self.my_cards = hands[-1]
 
         data = ""
@@ -35,18 +41,18 @@ class Game:
             data += f"{'-'.join(hands[index])}/"
         data += f"{self.turn}"
         
-        cards_package = Package(src=node.ip, token=False, type=CARDS, data=data)
-        node.send_package(cards_package)
+        cards_package = Package(src=self.node.ip, dst=None, token=False, type=CARDS, data=data)
+        self.node.send_package(cards_package)
 
-        response = node.recv_package()
+        response = self.node.recv_package()
         if response.type == CARDS and (len(response.data.split("/")) == 1):
             print("Cartas distribuidas, iniciando a rodada...")
             self.phase = GAME
 
     
-    def receive_cards(self, node):
+    def receive_cards(self):
         print("Esperando as cartas...\n")
-        card_package = node.recv_package()
+        card_package = self.node.recv_package()
 
         if card_package.type == CARDS:
             splited_data = card_package.data.split("/")
@@ -58,8 +64,12 @@ class Game:
                 data += f"{splited_data[index]}/"
             data += f"{self.turn}"
 
-            cards_package = Package(src=node.ip, token=False, type=CARDS, data=data)
-            node.send_package(cards_package)
+            cards_package = Package(src=self.node.ip, dst=None, token=False, type=CARDS, data=data)
+            self.node.send_package(cards_package)
         
         print("Cartas recebidas, iniciando a rodada...")
         self.phase = GAME
+
+
+    def bet_wins(self):
+        print(self.my_cards)

@@ -1,25 +1,22 @@
 import sys, os; sys.path.append(os.path.join(os.path.dirname(__file__), '.'))
 
-from Constants import BUFFER_SIZE, CONNECTION, LIST, TIMEOUT, NUM_PLAYERS
+from Constants import LOCAL_NAMES, BUFFER_SIZE, CONNECTION, LIST, TIMEOUT, NUM_PLAYERS
 from Package import Package
 import select
 import socket
 
-KEYS = ['name', 'ip', 'port']
-
 class Node:
-    def __init__(self, port, neighbor, neighbor_port, token):
+    def __init__(self, machine, port, neighbor, neighbor_port, token):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-
         self.machines = []
 
-        self.hostname = socket.gethostname()
-        self.ip = socket.gethostbyname(self.hostname)
+        self.hostname = machine if machine in LOCAL_NAMES else socket.gethostname()
+        self.ip = "127.0.0.1" if machine in LOCAL_NAMES else socket.gethostbyname(self.hostname)
         self.port = port
 
-        self.neighbor_ip = self.ip if neighbor == "local" else socket.gethostbyname(neighbor)
         self.neighbor, self.neighbor_port = neighbor, neighbor_port
-
+        self.neighbor_ip = self.ip if neighbor in LOCAL_NAMES else socket.gethostbyname(neighbor)
+        
         self.token = bool(token)
         self.socket.bind((self.ip, self.port))
 
@@ -44,17 +41,17 @@ class Node:
         print("Estabelencendo conexao...")
 
         if self.token:
-            connection_package = Package(src=self.ip, token=False, type=CONNECTION, data="-1")
+            connection_package = Package(src=self.ip, dst=None, token=False, type=CONNECTION, data="-1")
             self.send_package(connection_package)
             
             package = self.recv_package()
             splited_data = package.data.split("-")
 
             if package.type == CONNECTION and int(splited_data[-1]) == NUM_PLAYERS:
-                machines = splited_data[0].split("/")[1:]
-                self._get_machines_dict(machines)
+                print(splited_data[0])
+                self.machines = splited_data[0].split("/")[1:]
 
-                self._send_full_connection_list(machines)
+                self._send_full_connection_list(self.machines)
                 package = self.recv_package()
 
                 if package.type == LIST:
@@ -68,31 +65,21 @@ class Node:
             package = self.recv_package()
             if package.type == CONNECTION:
                 splited_data = package.data.split("-")
-                count = int(splited_data[-1]) + 1
-                data = splited_data[0] + f"/({self.hostname}, {self.ip}, {self.port})-" + f"{count}"
+                data = splited_data[0] + f"/{self.hostname}-" + f"{int(splited_data[-1]) + 1}"
 
-                connection_package = Package(src=self.ip, token=False, type=CONNECTION, data=data)
+                connection_package = Package(src=self.ip, dst=None, token=False, type=CONNECTION, data=data)
                 self.send_package(connection_package)
 
             package = self.recv_package()
             if package.type == LIST:
-                machines = package.data.split("/")[1:]
-                self._get_machines_dict(machines)
+                self.machines = package.data.split("/")
                 
-                self._send_full_connection_list(machines)
+                self._send_full_connection_list(self.machines)
                 print("Conexao estabelecia - O jogo pode comecar!")
-    
-    
-    def _get_machines_dict(self, machines):
-        for machine in machines:
-            values = [item.strip() for item in machine.strip("()").split(",")]
-            self.machines.append(dict(zip(KEYS, values)))
 
 
     def _send_full_connection_list(self, machines):
-        data = "/".join([machine for index, machine in enumerate(machines) 
-                            if self.machines[index]["port"] != self.neighbor_port 
-                            and self.machines[index]["name"] != self.neighbor])
-        data += f"/({self.hostname}, {self.ip}, {self.port})"
-        list_package = Package(src=self.ip, token=False, type=LIST, data=data)
+        data = "/".join([machine for machine in machines if machine != self.neighbor])
+        data += f"/{self.hostname}"
+        list_package = Package(src=self.ip, dst=None, token=False, type=LIST, data=data)
         self.send_package(list_package)

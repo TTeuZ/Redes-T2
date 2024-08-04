@@ -1,4 +1,5 @@
 # Constants
+LOCAL_NAMES = ["N1", "N2", "N3", "N4"]
 DELIMITER = "~"
 BUFFER_SIZE = 1024
 TIMEOUT = 60
