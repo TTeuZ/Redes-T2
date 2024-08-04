@@ -10,7 +10,8 @@ def main(args):
 
     game = Game(node.machines, node)
     while not game.ended:
-        if game.lifes >= 0:
+        print("\n--------------------------------------------------------------------------")
+        if not game.dead:
             game.clear_state()
             print(f"Iniciando round: {game.rounds}")
 
@@ -20,17 +21,27 @@ def main(args):
                 game.receive_cards()
 
             time.sleep(1)
-            while game.phase == Constants.GAME:     
+            game.show_cards()
+            print(f"Vira da rodade eh: {game.turn}\n")
+            time.sleep(1)
+            
+            while game.phase == Constants.GAME:
                 game.bet_wins()
                 game.show_bets()
 
-                print(f"Vira da rodade eh: {game.turn}")
-                for g_round in range(Constants.ROUNDS):
-                    print("fazer a jogada")
+                for r_index in range(Constants.ROUNDS):
+                    print(f"Rodada {r_index + 1}")
 
+                    moves = game.make_move()
+                    game.compute_results(moves)
+
+                print("calcular as percas de vida")
+                print("mandar as percas na rede")
+                print("quando receber a perca, decrementar a sua vida")
                 game.phase = Constants.PREPARE
 
             game.ended = True # Temporary
+        print("--------------------------------------------------------------------------\n")
 
 
 if __name__ == "__main__":

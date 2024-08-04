@@ -54,16 +54,16 @@ class Node:
                 response = self.recv_package()
 
                 if response.type == Constants.LIST:
-                    print("Conexao estabelecia - O jogo pode comecar!\n")
+                    print("Conexao estabelecia - O jogo pode comecar!")
                 else:
                     print(f"Falha na conexao. Atualizacao da lista de jogadores mal sucedida.")
             else:
                 print(f"Falha na conexao. Apenas {int(splited_data[-1])} conectadas")
                 
         else:
-            response = self.recv_package()
-            if response.type == Constants.CONNECTION:
-                splited_data = response.data.split("-")
+            connection_package = self.recv_package()
+            if connection_package.type == Constants.CONNECTION:
+                splited_data = connection_package.data.split("-")
                 data = splited_data[0] + f"/{self.hostname}-" + f"{int(splited_data[-1]) + 1}"
 
                 connection_package = Package(src=self.ip, dst=None, token=False, type=Constants.CONNECTION, data=data)
@@ -74,7 +74,7 @@ class Node:
                 self.machines = response.data.split("/")
                 
                 self._send_full_connection_list(self.machines)
-                print("Conexao estabelecia - O jogo pode comecar!\n")
+                print("Conexao estabelecia - O jogo pode comecar!")
 
     # ------------------------------------------------------ Internal --------------------------------------------------------------------
 
