@@ -5,7 +5,7 @@ import argparse
 import time
 
 def main(args):
-    node = Node(args.machine, args.port, args.neighbor, args.neighbor_port, args.token)
+    node = Node(args.machine, args.port, args.neighbor, args.neighbor_port, args.dealer)
     node.establish_connection()
 
     game = Game(node.machines, node)
@@ -15,7 +15,7 @@ def main(args):
             game.clear_state()
             print(f"Iniciando round: {game.rounds} - Minhas vidas: {game.lifes}")
 
-            if node.token: 
+            if node.dealer: 
                 game.shuffle_and_distribute()
             else: 
                 game.receive_cards()
@@ -44,11 +44,11 @@ def main(args):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Token Ring Network", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser = argparse.ArgumentParser(description="dealer Ring Network", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("-m", "--machine", type=str, required=True)
     parser.add_argument("-p", "--port", type=int, required=True)
     parser.add_argument("-n", "--neighbor", type=str, required=True)
     parser.add_argument("-np", "--neighbor_port", type=int, required=True)
-    parser.add_argument("-t", "--token", type=int, required=True)
+    parser.add_argument("-t", "--dealer", type=int, required=True)
 
     main(parser.parse_args())

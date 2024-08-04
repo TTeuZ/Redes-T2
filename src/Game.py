@@ -42,7 +42,7 @@ class Game:
             data += f"{'-'.join(hands[index])}/"
         data += f"{self.turn}"
         
-        cards_package = Package(src=self.node.ip, dst=None, token=False, type=Constants.CARDS, data=data)
+        cards_package = Package(src=self.node.ip, dst=None, dealer=False, type=Constants.CARDS, data=data)
         self.node.send_package(cards_package)
 
         response = self.node.recv_package()
@@ -65,7 +65,7 @@ class Game:
                 data += f"{split_data[index]}/"
             data += f"{self.turn}"
 
-            card_package = Package(src=self.node.ip, dst=None, token=False, type=Constants.CARDS, data=data)
+            card_package = Package(src=self.node.ip, dst=None, dealer=False, type=Constants.CARDS, data=data)
             self.node.send_package(card_package)
         
         print("Cartas recebidas, iniciando a rodada...")
@@ -82,8 +82,8 @@ class Game:
     def bet_wins(self):
         print("Esperando os demais jogares apostarem...")
         
-        if self.node.token:
-            bet_package = Package(src=self.node.ip, dst=None, token=False, type=Constants.BET, data="")
+        if self.node.dealer:
+            bet_package = Package(src=self.node.ip, dst=None, dealer=False, type=Constants.BET, data="")
             self.node.send_package(bet_package)
 
             response = self.node.recv_package()
@@ -103,12 +103,12 @@ class Game:
                 print("Esperando demais apostas...\n")
                 data = bet_package.data + f"({self.node.hostname}, {bet})-"
 
-                bet_package = Package(src=self.node.ip, dst=None, token=False, type=Constants.BET, data=data)
+                bet_package = Package(src=self.node.ip, dst=None, dealer=False, type=Constants.BET, data=data)
                 self.node.send_package(bet_package)
 
 
     def show_bets(self):
-        if self.node.token:
+        if self.node.dealer:
             print("\nAs apostas feitas foram: ")
 
             data = ""
@@ -117,7 +117,7 @@ class Game:
                 data += f"({player}, {info['bet']})-"
             print("", end="\n")
         
-            show_package = Package(src=self.node.ip, dst=None, token=False, type=Constants.SHOW, data=data)
+            show_package = Package(src=self.node.ip, dst=None, dealer=False, type=Constants.SHOW, data=data)
             self.node.send_package(show_package)
 
             response = self.node.recv_package()
@@ -135,15 +135,15 @@ class Game:
                     print(f"{bet[0]}: {bet[1]} ", end=" ")
                 print("", end="\n")
 
-                show_package = Package(src=self.node.ip, dst=None, token=False, type=Constants.SHOW, data=show_package.data)
+                show_package = Package(src=self.node.ip, dst=None, dealer=False, type=Constants.SHOW, data=show_package.data)
                 self.node.send_package(show_package)
 
                 print("\nIniciando as rodadas...\n")
 
 
     def make_move(self):
-        if self.node.token:
-            move_package = Package(src=self.node.ip, dst=None, token=False, type=Constants.MOVE, data="")
+        if self.node.dealer:
+            move_package = Package(src=self.node.ip, dst=None, dealer=False, type=Constants.MOVE, data="")
             self.node.send_package(move_package)
 
             response = self.node.recv_package()
@@ -164,7 +164,7 @@ class Game:
                 selected_card = self._select_card(moves)
 
                 data = move_package.data + f"({self.node.hostname}, {selected_card})-"
-                move_package = Package(src=self.node.ip, dst=None, token=False, type=Constants.MOVE, data=data)
+                move_package = Package(src=self.node.ip, dst=None, dealer=False, type=Constants.MOVE, data=data)
                 self.node.send_package(move_package)
 
                 return []
@@ -173,13 +173,13 @@ class Game:
     def compute_results(self, moves):
         print("\nEsperando calculo do resultado...")
 
-        if self.node.token:
+        if self.node.dealer:
             winner_index = self._get_winner_index(moves)
             winner = moves[winner_index]
             self.players_alive[winner[0]]["points"] += 1
 
             data = "-".join(f"({move[0]}, {move[1]})" for move in moves) + "#" + f"({winner[0]}, {winner[1]})"
-            result_package = Package(src=self.node.ip, dst=None, token=False, type=Constants.RESULTS, data=data)
+            result_package = Package(src=self.node.ip, dst=None, dealer=False, type=Constants.RESULTS, data=data)
             self.node.send_package(result_package)
 
             response = self.node.recv_package()
@@ -196,14 +196,14 @@ class Game:
                 winner =(winner.split(',')[0].strip("() "), winner.split(',')[1].strip(") "))
                 self._print_results(moves, winner)
 
-                result_package = Package(src=self.node.ip, dst=None, token=False, type=Constants.RESULTS, data=result_package.data)
+                result_package = Package(src=self.node.ip, dst=None, dealer=False, type=Constants.RESULTS, data=result_package.data)
                 self.node.send_package(result_package)
 
 
     def check_round_result(self):
         print("Avaliando resultado da rodada...")
 
-        if self.node.token:
+        if self.node.dealer:
             players_results = {}
             for player, values in self.players_alive.items():
                 players_results[player] = abs(values["bet"] - values["points"])
@@ -211,7 +211,7 @@ class Game:
             self.lifes -= players_results[self.node.hostname]
 
             data = "-".join([f"({player}, {value})" for player, value in players_results.items()])
-            round_package = Package(src=self.node.ip, dst=None, token=False, type=Constants.ROUND, data=data)
+            round_package = Package(src=self.node.ip, dst=None, dealer=False, type=Constants.ROUND, data=data)
             self.node.send_package(round_package)
             
             response = self.node.recv_package()
@@ -229,7 +229,7 @@ class Game:
                 self.lifes -= result[1]
 
                 print("Resultados recebido!\n")
-                round_package = Package(src=self.node.ip, dst=None, token=False, type=Constants.ROUND, data=round_package.data)
+                round_package = Package(src=self.node.ip, dst=None, dealer=False, type=Constants.ROUND, data=round_package.data)
                 self.node.send_package(round_package)
 
 

@@ -6,7 +6,7 @@ import select
 import socket
 
 class Node:
-    def __init__(self, machine, port, neighbor, neighbor_port, token):
+    def __init__(self, machine, port, neighbor, neighbor_port, dealer):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.machines = []
 
@@ -17,7 +17,7 @@ class Node:
         self.neighbor, self.neighbor_port = neighbor, neighbor_port
         self.neighbor_ip = self.ip if neighbor in Constants.LOCAL_NAMES else socket.gethostbyname(neighbor)
         
-        self.token = bool(token)
+        self.dealer = bool(dealer)
         self.socket.bind((self.ip, self.port))
 
 
@@ -40,8 +40,8 @@ class Node:
     def establish_connection(self):
         print("Estabelencendo conexao...")
 
-        if self.token:
-            connection_package = Package(src=self.ip, dst=None, token=False, type=Constants.CONNECTION, data="-1")
+        if self.dealer:
+            connection_package = Package(src=self.ip, dst=None, dealer=False, type=Constants.CONNECTION, data="-1")
             self.send_package(connection_package)
             
             response = self.recv_package()
@@ -66,7 +66,7 @@ class Node:
                 split_data = connection_package.data.split("-")
                 data = split_data[0] + f"/{self.hostname}-" + f"{int(split_data[-1]) + 1}"
 
-                connection_package = Package(src=self.ip, dst=None, token=False, type=Constants.CONNECTION, data=data)
+                connection_package = Package(src=self.ip, dst=None, dealer=False, type=Constants.CONNECTION, data=data)
                 self.send_package(connection_package)
 
             response = self.recv_package()
@@ -82,5 +82,5 @@ class Node:
         data = "/".join([machine for machine in machines if machine != self.neighbor])
         data += f"/{self.hostname}"
 
-        list_package = Package(src=self.ip, dst=None, token=False, type=Constants.LIST, data=data)
+        list_package = Package(src=self.ip, dst=None, dealer=False, type=Constants.LIST, data=data)
         self.send_package(list_package)
