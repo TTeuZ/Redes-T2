@@ -1,29 +1,36 @@
-from src.Constants import GAME
+import src.Constants as Constants
 from src.Node import Node
 from src.Game import Game
 import argparse
+import time
 
 def main(args):
     node = Node(args.machine, args.port, args.neighbor, args.neighbor_port, args.token)
     node.establish_connection()
 
     game = Game(node.machines, node)
-    print(game.players_alive)
-
     while not game.ended:
         if game.lifes >= 0:
-            print(f"Iniciando round: {game.rounds}\n")
+            game.clear_state()
+            print(f"Iniciando round: {game.rounds}")
 
-            if node.token:
-                game.clear_state()
+            if node.token: 
                 game.shuffle_and_distribute()
-            else:
+            else: 
                 game.receive_cards()
 
-            while game.phase == GAME:     
-                game.bet_wins()  
+            time.sleep(1)
+            while game.phase == Constants.GAME:     
+                game.bet_wins()
+                game.show_bets()
 
-                game.ended = True
+                print(f"Vira da rodade eh: {game.turn}")
+                for g_round in range(Constants.ROUNDS):
+                    print("fazer a jogada")
+
+                game.phase = Constants.PREPARE
+
+            game.ended = True # Temporary
 
 
 if __name__ == "__main__":

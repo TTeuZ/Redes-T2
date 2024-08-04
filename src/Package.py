@@ -1,6 +1,6 @@
 import sys, os; sys.path.append(os.path.join(os.path.dirname(__file__), '.'))
 
-from Constants import DELIMITER
+import Constants
 
 class Package:
     def __init__(self, *args, **kwargs):
@@ -20,6 +20,6 @@ class Package:
 
     
     def get_message(self):
-        message = f"{DELIMITER}|{self.src}|{self.dst}|{self.token}|{self.type}|{self.data}|{DELIMITER}"
+        message = f"{Constants.DELIMITER}|{self.src}|{self.dst}|{self.token}|{self.type}|{self.data}|{Constants.DELIMITER}"
 
         return message
