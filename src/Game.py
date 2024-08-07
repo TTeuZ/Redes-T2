@@ -9,7 +9,7 @@ import time
 
 class Game:
     def __init__(self, machines, node):
-        self.lifes, self.rounds, self.dead = 2, 1, False
+        self.lifes, self.rounds, self.dead = 12, 1, False
         self.ended = False
         self.node = node
         

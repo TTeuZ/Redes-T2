@@ -8,10 +8,6 @@ GAME_MAX_BET = 4
 PLAYER_MAX_BET = 3
 ROUNDS = 3
 
-# Enum - Phases
-PREPARE = -15
-GAME = -16
-
 # Enum - Types
 CONNECTION = -1
 LIST = -2
