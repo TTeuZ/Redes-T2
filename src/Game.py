@@ -49,7 +49,6 @@ class Game:
         response = self.node.recv_package()
         if response.type == Constants.CARDS and (len(response.data.split("/")) == 1):
             print("Cartas distribuidas, iniciando a rodada...")
-            self.phase = Constants.GAME
 
     
     def receive_cards(self):
@@ -70,7 +69,6 @@ class Game:
             self.node.send_package(card_package)
         
         print("Cartas recebidas, iniciando a rodada...")
-        self.phase = Constants.GAME
 
 
     def show_cards(self):
