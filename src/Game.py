@@ -5,10 +5,11 @@ import Constants
 import random
 import math
 import copy
+import time
 
 class Game:
     def __init__(self, machines, node):
-        self.lifes, self.rounds, self.dead = 12, 1, False
+        self.lifes, self.rounds, self.dead = 2, 1, False
         self.ended = False
         self.node = node
         
@@ -42,7 +43,7 @@ class Game:
             data += f"{'-'.join(hands[index])}/"
         data += f"{self.turn}"
         
-        cards_package = Package(src=self.node.ip, dst=None, dealer=False, type=Constants.CARDS, data=data)
+        cards_package = Package(src=self.node.hostname, dst=None, type=Constants.CARDS, data=data)
         self.node.send_package(cards_package)
 
         response = self.node.recv_package()
@@ -65,7 +66,7 @@ class Game:
                 data += f"{split_data[index]}/"
             data += f"{self.turn}"
 
-            card_package = Package(src=self.node.ip, dst=None, dealer=False, type=Constants.CARDS, data=data)
+            card_package = Package(src=card_package.src, dst=None, type=Constants.CARDS, data=data)
             self.node.send_package(card_package)
         
         print("Cartas recebidas, iniciando a rodada...")
@@ -83,7 +84,7 @@ class Game:
         print("Esperando os demais jogares apostarem...")
         
         if self.node.dealer:
-            bet_package = Package(src=self.node.ip, dst=None, dealer=False, type=Constants.BET, data="")
+            bet_package = Package(src=self.node.hostname, dst=None, type=Constants.BET, data="")
             self.node.send_package(bet_package)
 
             response = self.node.recv_package()
@@ -99,17 +100,25 @@ class Game:
             bet_package = self.node.recv_package()
 
             if bet_package.type == Constants.BET:
+                split_data = bet_package.data.split("-")[:-1]
+                if len(split_data) > 0:
+                    bets = [(item.split(',')[0].strip("() "), int(item.split(',')[1].strip(") "))) for item in split_data]
+                    for bet in bets:
+                        print(f"{bet[0]}: {bet[1]} ", end=" ")
+                    print("\n", end="\n")
+
                 bet = self._make_bet()
                 print("Esperando demais apostas...\n")
+
                 data = bet_package.data + f"({self.node.hostname}, {bet})-"
 
-                bet_package = Package(src=self.node.ip, dst=None, dealer=False, type=Constants.BET, data=data)
+                bet_package = Package(src=bet_package.src, dst=None, type=Constants.BET, data=data)
                 self.node.send_package(bet_package)
 
 
     def show_bets(self):
         if self.node.dealer:
-            print("\nAs apostas feitas foram: ")
+            print("As apostas feitas foram: ")
 
             data = ""
             for player, info in self.players_alive.items():
@@ -117,7 +126,7 @@ class Game:
                 data += f"({player}, {info['bet']})-"
             print("", end="\n")
         
-            show_package = Package(src=self.node.ip, dst=None, dealer=False, type=Constants.SHOW, data=data)
+            show_package = Package(src=self.node.hostname, dst=None, type=Constants.SHOW, data=data)
             self.node.send_package(show_package)
 
             response = self.node.recv_package()
@@ -135,7 +144,7 @@ class Game:
                     print(f"{bet[0]}: {bet[1]} ", end=" ")
                 print("", end="\n")
 
-                show_package = Package(src=self.node.ip, dst=None, dealer=False, type=Constants.SHOW, data=show_package.data)
+                show_package = Package(src=show_package.src, dst=None, type=Constants.SHOW, data=show_package.data)
                 self.node.send_package(show_package)
 
                 print("\nIniciando as rodadas...\n")
@@ -143,7 +152,7 @@ class Game:
 
     def make_move(self):
         if self.node.dealer:
-            move_package = Package(src=self.node.ip, dst=None, dealer=False, type=Constants.MOVE, data="")
+            move_package = Package(src=self.node.hostname, dst=None, type=Constants.MOVE, data="")
             self.node.send_package(move_package)
 
             response = self.node.recv_package()
@@ -164,7 +173,7 @@ class Game:
                 selected_card = self._select_card(moves)
 
                 data = move_package.data + f"({self.node.hostname}, {selected_card})-"
-                move_package = Package(src=self.node.ip, dst=None, dealer=False, type=Constants.MOVE, data=data)
+                move_package = Package(src=move_package.src, dst=None, type=Constants.MOVE, data=data)
                 self.node.send_package(move_package)
 
                 return []
@@ -179,7 +188,7 @@ class Game:
             self.players_alive[winner[0]]["points"] += 1
 
             data = "-".join(f"({move[0]}, {move[1]})" for move in moves) + "#" + f"({winner[0]}, {winner[1]})"
-            result_package = Package(src=self.node.ip, dst=None, dealer=False, type=Constants.RESULTS, data=data)
+            result_package = Package(src=self.node.hostname, dst=None, type=Constants.RESULTS, data=data)
             self.node.send_package(result_package)
 
             response = self.node.recv_package()
@@ -196,7 +205,6 @@ class Game:
                 winner =(winner.split(',')[0].strip("() "), winner.split(',')[1].strip(") "))
                 self._print_results(moves, winner)
 
-                result_package = Package(src=self.node.ip, dst=None, dealer=False, type=Constants.RESULTS, data=result_package.data)
                 self.node.send_package(result_package)
 
 
@@ -211,7 +219,7 @@ class Game:
             self.lifes -= players_results[self.node.hostname]
 
             data = "-".join([f"({player}, {value})" for player, value in players_results.items()])
-            round_package = Package(src=self.node.ip, dst=None, dealer=False, type=Constants.ROUND, data=data)
+            round_package = Package(src=self.node.hostname, dst=None, type=Constants.ROUND, data=data)
             self.node.send_package(round_package)
             
             response = self.node.recv_package()
@@ -229,9 +237,103 @@ class Game:
                 self.lifes -= result[1]
 
                 print("Resultados recebido!\n")
-                round_package = Package(src=self.node.ip, dst=None, dealer=False, type=Constants.ROUND, data=round_package.data)
                 self.node.send_package(round_package)
 
+
+    def still_alive(self):
+        self.dead = True if self.lifes <= 0 else False
+
+        if self.node.dealer:
+            data = f"({self.node.hostname}, {0 if self.dead else 1})-"
+            alive_package = Package(src=self.node.hostname, dst=None, type=Constants.ALIVE, data=data)
+            self.node.send_package(alive_package)
+
+            response = self.node.recv_package()
+            if response.type == Constants.ALIVE:
+                self.update_player_status(response)
+
+            alive_package = Package(src=self.node.hostname, dst=None, type=Constants.ALIVE, data=response.data)
+            self.node.send_package(alive_package)
+
+            response = self.node.recv_package()
+            if response.type == Constants.ALIVE:
+                print("Status atualizados...")
+                if self.dead: print("Voce perdeu! T-T\n")
+
+        else:
+            alive_package = self.node.recv_package()
+            if alive_package.type == Constants.ALIVE:
+                data = alive_package.data + f"({self.node.hostname}, {0 if self.dead else 1})-"
+                alive_package = Package(src=alive_package.src, dst=None, type=Constants.ALIVE, data=data)
+                self.node.send_package(alive_package)
+            
+            alive_package = self.node.recv_package()
+            if alive_package.type == Constants.ALIVE:
+                self.update_player_status(alive_package)
+
+                self.node.send_package(alive_package)
+                print("Status atualizados...")
+                if self.dead: print("Voce perdeu! T-T\n")
+
+
+    def game_ended(self):
+        self.ended = True if len(self.players_alive) <= 1 else False
+
+        if self.ended:
+            if self.node.dealer:
+                winner = next(iter(self.players_alive)) if len(self.players_alive) > 0 else "Empate"
+                end_game_package = Package(src=self.node.hostname, dst=None, type=Constants.END_GAME, data=winner)
+                self.node.send_package(end_game_package)
+
+                response = self.node.recv_package()
+                if response.type == Constants.END_GAME:
+                    if winner == "Empate": print(f"Jogo finalizado! - Empate")
+                    else: print(f"Jogo finalizado! - Vencedor: {winner}")
+            
+            else:
+                end_game_package = self.node.recv_package()
+
+                if end_game_package.type == Constants.END_GAME:
+                    self.node.send_package(end_game_package)
+                    if end_game_package.data == "Empate": print(f"Jogo finalizado! - Empate")
+                    else: print(f"Jogo finalizado! - Vencedor: {end_game_package.data}")
+                    
+
+    def pass_dealer(self):
+        if self.node.dealer:
+            dealer_package = Package(src=self.node.hostname, dst=self.node.neighbor, type=Constants.DEALER, data="")
+            self.node.send_package(dealer_package)
+        
+            response = self.node.recv_package()
+            if response.type == Constants.DEALER:
+                self.node.dealer = False
+                print(f"Dealer transferido!\n")
+
+        else:
+            dealer_package = self.node.recv_package()
+
+            if dealer_package.type == Constants.DEALER:
+                if dealer_package.dst == self.node.hostname:
+                    if self.dead:
+                        dealer_package = Package(src=dealer_package.src, dst=self.node.neighbor, type=Constants.DEALER, data="")
+                    else:
+                        print(f"Dealer Recebido!\n")
+                        self.node.dealer = True
+
+                self.node.send_package(dealer_package)
+
+
+    def dead_mode(self):
+        package = self.node.recv_package()
+        if package.type == Constants.END_GAME:
+            print(f"Jogo finalizado! - Vencedor: {package.data}")
+            self.ended = True
+
+        elif package.type == Constants.DEALER:
+            if package.dst == self.node.hostname:
+                package = Package(src=package.src, dst=self.node.neighbor, type=Constants.DEALER, data="")
+  
+        self.node.send_package(package)
 
     # ------------------------------------------------------ Internal --------------------------------------------------------------------
 
@@ -254,7 +356,7 @@ class Game:
         self.show_cards()
         selected = math.inf
         while selected >= len(self.my_cards):
-            selected = int(input("Qual carta pretende jogar (index)? "))
+            selected = int(input("Escolha qual carta jogar (index): "))
             if  selected >= len(self.my_cards): print("Index fora do range...")
         
         return self.my_cards.pop(selected)
@@ -290,3 +392,11 @@ class Game:
         print("", end="\n")
 
         print(f"Ganhador: {winner[0]}\n")
+
+
+    def update_player_status(self, package):
+        split_data = package.data.split("-")[:-1]
+        statuses = [(item.split(',')[0].strip("() "), int(item.split(',')[1].strip(") "))) for item in split_data]
+
+        for status in statuses:
+            if not status[1]: del self.players_alive[status[0]]

@@ -9,8 +9,8 @@ PLAYER_MAX_BET = 3
 ROUNDS = 3
 
 # Enum - Phases
-PREPARE = -10
-GAME = -11
+PREPARE = -15
+GAME = -16
 
 # Enum - Types
 CONNECTION = -1
@@ -21,6 +21,9 @@ SHOW = -5
 MOVE = -6
 RESULTS = -7
 ROUND = -8
+ALIVE = -9
+END_GAME = -10
+DEALER = -11
 
 # Deck
 CARDS_BY_HAND = 3

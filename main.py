@@ -10,37 +10,51 @@ def main(args):
 
     game = Game(node.machines, node)
     while not game.ended:
-        print("\n--------------------------------------------------------------------------")
         if not game.dead:
+            print("\n--------------------------------------------------------------------------")
             game.clear_state()
             print(f"Iniciando round: {game.rounds} - Minhas vidas: {game.lifes}")
 
-            if node.dealer: 
-                game.shuffle_and_distribute()
-            else: 
+            if not node.dealer: 
                 game.receive_cards()
+            else: 
+                game.shuffle_and_distribute()
 
             time.sleep(1)
             game.show_cards()
+
             print(f"Vira da rodade eh: {game.turn}\n")
-            time.sleep(1)
-            
+
             game.bet_wins()
             game.show_bets()
+            time.sleep(1)
 
             for r_index in range(Constants.ROUNDS):
                 print(f"Rodada {r_index + 1}")
-
+                print("Aguardando jogadas...\n")
                 moves = game.make_move()
                 game.compute_results(moves)
+                time.sleep(1)
 
             game.check_round_result()
-            game.rounds += 1
-            # print("calcular as percas de vida")
-            # print("mandar as percas na rede")
-            # print("quando receber a perca, decrementar a sua vida")
+            game.still_alive()
+            game.game_ended()
+            time.sleep(1)
+            
+            if not game.ended:
+                game.pass_dealer()
 
-        print("--------------------------------------------------------------------------\n")
+                game.rounds += 1
+                time.sleep(1)
+            print("--------------------------------------------------------------------------\n")
+
+        else:
+            game.dead_mode()
+            print("Pacote recebido, retransferindo...")
+            time.sleep(1)
+        
+        time.sleep(2)
+    print("Jogo acabou!\n")
 
 
 if __name__ == "__main__":
@@ -49,6 +63,6 @@ if __name__ == "__main__":
     parser.add_argument("-p", "--port", type=int, required=True)
     parser.add_argument("-n", "--neighbor", type=str, required=True)
     parser.add_argument("-np", "--neighbor_port", type=int, required=True)
-    parser.add_argument("-t", "--dealer", type=int, required=True)
+    parser.add_argument("-d", "--dealer", type=int, required=True)
 
     main(parser.parse_args())
