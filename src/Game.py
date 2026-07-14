@@ -27,7 +27,7 @@ class Game:
 
 
     def shuffle_and_distribute(self):
-        print("Distribuindo as cartas...\n")
+        print("Dealing the cards...\n")
         shuffled_deck = random.sample(Constants.DECK, len(Constants.DECK))
 
         hands = []
@@ -48,11 +48,11 @@ class Game:
 
         response = self.node.recv_package()
         if response.type == Constants.CARDS and (len(response.data.split("/")) == 1):
-            print("Cartas distribuidas, iniciando a rodada...")
+            print("Cards dealt, starting the hand...")
 
     
     def receive_cards(self):
-        print("Esperando as cartas...\n")
+        print("Waiting for the cards...\n")
         card_package = self.node.recv_package()
 
         if card_package.type == Constants.CARDS:
@@ -68,18 +68,18 @@ class Game:
             card_package = Package(src=card_package.src, dst=None, type=Constants.CARDS, data=data)
             self.node.send_package(card_package)
         
-        print("Cartas recebidas, iniciando a rodada...")
+        print("Cards received, starting the hand...")
 
 
     def show_cards(self):
-        print("Minhas cartas: ", end="")
+        print("My cards: ", end="")
         for card in self.my_cards:
             print(card, end=" ")
         print("", end="\n")
 
 
     def bet_wins(self):
-        print("Esperando os demais jogares apostarem...")
+        print("Waiting for the other players to bet...")
         
         if self.node.dealer:
             bet_package = Package(src=self.node.hostname, dst=None, type=Constants.BET, data="")
@@ -106,7 +106,7 @@ class Game:
                     print("\n", end="\n")
 
                 bet = self._make_bet()
-                print("Esperando demais apostas...\n")
+                print("Waiting for the remaining bets...\n")
 
                 data = bet_package.data + f"({self.node.hostname}, {bet})-"
 
@@ -116,24 +116,24 @@ class Game:
 
     def show_bets(self):
         if self.node.dealer:
-            print("As apostas feitas foram: ")
+            print("The bets made were: ")
 
             data = ""
             for player, info in self.players_alive.items():
                 print(f"{player}: {info['bet']} ", end=" ")
                 data += f"({player}, {info['bet']})-"
             print("", end="\n")
-        
+
             show_package = Package(src=self.node.hostname, dst=None, type=Constants.SHOW, data=data)
             self.node.send_package(show_package)
 
             response = self.node.recv_package()
             if response.type == Constants.SHOW:
-                print("\nIniciando as rodadas...\n")
-        
+                print("\nStarting the tricks...\n")
+
         else:
             show_package = self.node.recv_package()
-            print("\nAs apostas feitas foram: ")
+            print("\nThe bets made were: ")
 
             if show_package.type == Constants.SHOW:
                 split_data = show_package.data.split("-")[:-1]
@@ -145,7 +145,7 @@ class Game:
                 show_package = Package(src=show_package.src, dst=None, type=Constants.SHOW, data=show_package.data)
                 self.node.send_package(show_package)
 
-                print("\nIniciando as rodadas...\n")
+                print("\nStarting the tricks...\n")
 
 
     def make_move(self):
@@ -178,7 +178,7 @@ class Game:
 
 
     def compute_results(self, moves):
-        print("\nEsperando calculo do resultado...")
+        print("\nWaiting for the result calculation...")
 
         if self.node.dealer:
             winner_index = self._get_winner_index(moves)
@@ -207,7 +207,7 @@ class Game:
 
 
     def check_round_result(self):
-        print("Avaliando resultado da rodada...")
+        print("Evaluating the hand's result...")
 
         if self.node.dealer:
             players_results = {}
@@ -222,7 +222,7 @@ class Game:
             
             response = self.node.recv_package()
             if response.type == Constants.ROUND:
-                print("Resultados transmitidos!\n")
+                print("Results broadcast!\n")
 
         else:
             round_package = self.node.recv_package()
@@ -234,7 +234,7 @@ class Game:
                 result = next((item for item in round_results if item[0] == self.node.hostname), None)
                 self.lifes -= result[1]
 
-                print("Resultados recebido!\n")
+                print("Results received!\n")
                 self.node.send_package(round_package)
 
 
@@ -255,8 +255,8 @@ class Game:
 
             response = self.node.recv_package()
             if response.type == Constants.ALIVE:
-                print("Status atualizados...")
-                if self.dead: print("Voce perdeu! T-T\n")
+                print("Status updated...")
+                if self.dead: print("You lost! T-T\n")
 
         else:
             alive_package = self.node.recv_package()
@@ -270,8 +270,8 @@ class Game:
                 self.update_player_status(alive_package)
 
                 self.node.send_package(alive_package)
-                print("Status atualizados...")
-                if self.dead: print("Voce perdeu! T-T\n")
+                print("Status updated...")
+                if self.dead: print("You lost! T-T\n")
 
 
     def game_ended(self):
@@ -279,22 +279,22 @@ class Game:
 
         if self.ended:
             if self.node.dealer:
-                winner = next(iter(self.players_alive)) if len(self.players_alive) > 0 else "Empate"
+                winner = next(iter(self.players_alive)) if len(self.players_alive) > 0 else "Draw"
                 end_game_package = Package(src=self.node.hostname, dst=None, type=Constants.END_GAME, data=winner)
                 self.node.send_package(end_game_package)
 
                 response = self.node.recv_package()
                 if response.type == Constants.END_GAME:
-                    if winner == "Empate": print(f"Jogo finalizado! - Empate")
-                    else: print(f"Jogo finalizado! - Vencedor: {winner}")
-            
+                    if winner == "Draw": print(f"Game over! - Draw")
+                    else: print(f"Game over! - Winner: {winner}")
+
             else:
                 end_game_package = self.node.recv_package()
 
                 if end_game_package.type == Constants.END_GAME:
                     self.node.send_package(end_game_package)
-                    if end_game_package.data == "Empate": print(f"Jogo finalizado! - Empate")
-                    else: print(f"Jogo finalizado! - Vencedor: {end_game_package.data}")
+                    if end_game_package.data == "Draw": print(f"Game over! - Draw")
+                    else: print(f"Game over! - Winner: {end_game_package.data}")
                     
 
     def pass_dealer(self):
@@ -305,7 +305,7 @@ class Game:
             response = self.node.recv_package()
             if response.type == Constants.DEALER:
                 self.node.dealer = False
-                print(f"Dealer transferido!\n")
+                print(f"Dealer transferred!\n")
 
         else:
             dealer_package = self.node.recv_package()
@@ -315,7 +315,7 @@ class Game:
                     if self.dead:
                         dealer_package = Package(src=dealer_package.src, dst=self.node.neighbor, type=Constants.DEALER, data="")
                     else:
-                        print(f"Dealer Recebido!\n")
+                        print(f"Dealer received!\n")
                         self.node.dealer = True
 
                 self.node.send_package(dealer_package)
@@ -324,7 +324,7 @@ class Game:
     def dead_mode(self):
         package = self.node.recv_package()
         if package.type == Constants.END_GAME:
-            print(f"Jogo finalizado! - Vencedor: {package.data}")
+            print(f"Game over! - Winner: {package.data}")
             self.ended = True
 
         elif package.type == Constants.DEALER:
@@ -338,15 +338,15 @@ class Game:
     def _make_bet(self):
         bet = math.inf
         while bet > Constants.PLAYER_MAX_BET:
-            bet = int(input("Quantas voce vai ganhar? "))
-            if bet > Constants.PLAYER_MAX_BET: print("Sua aposta tem que ser menor que 3...")
+            bet = int(input("How many will you win? "))
+            if bet > Constants.PLAYER_MAX_BET: print("Your bet has to be less than 3...")
         
         return bet
     
 
     def _select_card(self, moves):
         if len(moves) > 0:
-            print("Jogadas ja feitas: ")
+            print("Plays already made: ")
             for move in moves:
                 print(f"{move[0]}: {move[1]} ", end=" ")
             print("\n", end="\n")
@@ -354,8 +354,8 @@ class Game:
         self.show_cards()
         selected = math.inf
         while selected >= len(self.my_cards):
-            selected = int(input("Escolha qual carta jogar (index): "))
-            if  selected >= len(self.my_cards): print("Index fora do range...")
+            selected = int(input("Choose which card to play (index): "))
+            if  selected >= len(self.my_cards): print("Index out of range...")
         
         return self.my_cards.pop(selected)
     
@@ -383,13 +383,13 @@ class Game:
 
 
     def _print_results(self, moves, winner):
-        print("\nJogadas da rodada: ")
+        print("\nPlays of the trick: ")
 
         for move in moves:
             print(f"{move[0]}: {move[1]} ", end=" ")
         print("", end="\n")
 
-        print(f"Ganhador: {winner[0]}\n")
+        print(f"Winner: {winner[0]}\n")
 
 
     def update_player_status(self, package):

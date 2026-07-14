@@ -13,7 +13,7 @@ def main(args):
         if not game.dead:
             print("\n--------------------------------------------------------------------------")
             game.clear_state()
-            print(f"Iniciando round: {game.rounds} - Minhas vidas: {game.lifes}")
+            print(f"Starting round: {game.rounds} - My lives: {game.lifes}")
 
             if not node.dealer: 
                 game.receive_cards()
@@ -23,15 +23,15 @@ def main(args):
             time.sleep(1)
             game.show_cards()
 
-            print(f"Vira da rodade eh: {game.turn}\n")
+            print(f"The vira is: {game.turn}\n")
 
             game.bet_wins()
             game.show_bets()
             time.sleep(1)
 
             for r_index in range(Constants.ROUNDS):
-                print(f"Rodada {r_index + 1}")
-                print("Aguardando jogadas...\n")
+                print(f"Trick {r_index + 1}")
+                print("Waiting for plays...\n")
                 moves = game.make_move()
                 game.compute_results(moves)
                 time.sleep(1)
@@ -50,11 +50,11 @@ def main(args):
 
         else:
             game.dead_mode()
-            print("Pacote recebido, retransferindo...")
+            print("Packet received, forwarding...")
             time.sleep(1)
-        
+
         time.sleep(2)
-    print("Jogo acabou!\n")
+    print("Game over!\n")
 
 
 if __name__ == "__main__":

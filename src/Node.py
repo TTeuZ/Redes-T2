@@ -38,7 +38,7 @@ class Node:
 
 
     def establish_connection(self):
-        print("Estabelencendo conexao...")
+        print("Establishing connection...")
 
         if self.dealer:
             connection_package = Package(src=self.ip, dst=None, dealer=False, type=Constants.CONNECTION, data="-1")
@@ -54,11 +54,11 @@ class Node:
                 response = self.recv_package()
 
                 if response.type == Constants.LIST:
-                    print("Conexao estabelecia - O jogo pode comecar!")
+                    print("Connection established - the game can start!")
                 else:
-                    print(f"Falha na conexao. Atualizacao da lista de jogadores mal sucedida.")
+                    print(f"Connection failed. Player list update unsuccessful.")
             else:
-                print(f"Falha na conexao. Apenas {int(split_data[-1])} conectadas")
+                print(f"Connection failed. Only {int(split_data[-1])} connected")
                 
         else:
             connection_package = self.recv_package()
@@ -74,7 +74,7 @@ class Node:
                 self.machines = response.data.split("/")
                 
                 self._send_full_connection_list(self.machines)
-                print("Conexao estabelecia - O jogo pode comecar!")
+                print("Connection established - the game can start!")
 
     # ------------------------------------------------------ Internal --------------------------------------------------------------------
 
